@@ -25,39 +25,8 @@ const model = new ChatAnthropic({
 
 const checkpointSaver = new MemorySaver();
 
-const agent = createReactAgent({
+export const agent = createReactAgent({
   llm: model,
   tools: [weatherTool],
   checkpointSaver,
 });
-
-const result = await agent.invoke(
-  {
-    messages: [
-      {
-        role: "user",
-        content: "How  is it in Kakinada?",
-      },
-    ],
-  },
-  {
-    configurable: { thread_id: 44 },
-  }
-);
-
-const followup = await agent.invoke(
-  {
-    messages: [
-      {
-        role: "user",
-        content: "What city is it for?",
-      },
-    ],
-  },
-  {
-    configurable: { thread_id: 44 },
-  }
-);
-
-console.log(result.messages.at(-1).content);
-console.log(followup.messages.at(-1).content);
