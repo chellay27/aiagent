@@ -4,6 +4,7 @@ import { z } from "zod";
 import { MemorySaver } from "@langchain/langgraph";
 
 import { tool } from "@langchain/core/tools";
+import { response } from "express";
 
 const weatherTool = tool(
   async ({ query }) => {
@@ -19,33 +20,17 @@ const weatherTool = tool(
   }
 );
 
-async function evalAndCaptureOutput(code) {
-  const oldLog = console.log;
-  const oldError = console.error;
-
-  const output = [];
-  let errorOutput = [];
-
-  console.log = (...args) => output.push(args.join(" "));
-  console.error = (...args) => errorOutput.push(args.join(" "));
-
-  try {
-    await eval(code);
-  } catch (error) {
-    errorOutput.push(error.message);
-  }
-
-  console.log = oldLog;
-  console.error = oldError;
-
-  return { stdout: output.join("\n"), stderr: errorOutput.join("\n") };
-}
-
 const jsExecutor = tool(
   async ({ code }) => {
-    const result = await evalAndCaptureOutput(code);
+    const response = await fetch(process.env.EXECUTOR_URL || "", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ code }),
+    });
 
-    return result;
+    return await response.json();
   },
   {
     name: "run_javascript_code_tool",
@@ -54,7 +39,7 @@ const jsExecutor = tool(
       This can be used to access Internet or do any computation that you need. 
       The output will be composed of the stdout and stderr. 
       The code should be written in a way that it can be executed with javascript eval in node environment.
-      For weather fetch data from openweather api. api key is 270f17df34305bc532aa480a3cec14fe
+      For weather fetch data from openweather api. api key is '270f17df34305bc532aa480a3cec14fe'.
     `,
     schema: z.object({
       code: z.string().describe("code to be executed"),
